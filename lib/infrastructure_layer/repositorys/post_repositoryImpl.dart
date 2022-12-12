@@ -1,23 +1,29 @@
 import 'package:babyfoodgram/domain_layer/extensions/post_ref.dart';
 import 'package:babyfoodgram/domain_layer/extensions/user_ref.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
-import '../../domain_layer/domain_providers.dart';
 import '../../domain_layer/interfaces/repository/post_repository.dart';
 import '../../domain_layer/models/post/post.dart';
 import '../../domain_layer/models/user/myPost/my_post.dart';
 import '../../utils/custom_exception.dart';
 
 class PostRepositoryImpl implements PostRepository {
-  final Reader _read;
-  const PostRepositoryImpl(this._read);
+  PostRepositoryImpl(
+      {required FirebaseFirestore firebaseFirestore,
+      required FirebaseStorage firebaseStorage})
+      : _firebaseFirestore = firebaseFirestore,
+        _firebaseStorage = firebaseStorage;
+
+  final FirebaseFirestore _firebaseFirestore;
+  final FirebaseStorage _firebaseStorage;
 
 // 投稿するIDの取得
   @override
   Future<String> getCreatePostId() async {
     try {
-      final _id = await _read(firebaseFirestoreProvider).postsRef().doc().id;
+      final _id = await _firebaseFirestore.postsRef().doc().id;
       return _id;
     } on FirebaseAuthException catch (e) {
       throw CustomException(message: e.message);
@@ -28,8 +34,7 @@ class PostRepositoryImpl implements PostRepository {
   @override
   Future<Post> fetchUserPost(String id) async {
     try {
-      final docs =
-          await _read(firebaseFirestoreProvider).userPostsRef(id).get();
+      final docs = await _firebaseFirestore.userPostsRef(id).get();
       final data = docs.data();
       return Post.fromJson(data!);
     } on FirebaseAuthException catch (e) {
@@ -42,15 +47,11 @@ class PostRepositoryImpl implements PostRepository {
   Future<void> createPost(Post post) async {
     try {
       // postに登録
-      await _read(firebaseFirestoreProvider)
-          .userPostsRef("${post.id}")
-          .set(post.toJson());
+      await _firebaseFirestore.userPostsRef("${post.id}").set(post.toJson());
 
       // myPostに登録
-      await _read(firebaseFirestoreProvider)
-          .myPostRef("${post.postUserId}")
-          .doc(post.id)
-          .set(MyPost(
+      await _firebaseFirestore.myPostRef("${post.postUserId}").doc(post.id).set(
+          MyPost(
                   postUserId: "${post.postUserId}",
                   postId: post.id!,
                   createdAt: post.createdAt)
@@ -64,8 +65,7 @@ class PostRepositoryImpl implements PostRepository {
   @override
   Future<List<String>> myPostIds(String uid) async {
     try {
-      final snapshot =
-          await _read(firebaseFirestoreProvider).myPostRef(uid).get();
+      final snapshot = await _firebaseFirestore.myPostRef(uid).get();
       final list = snapshot.docs.map((doc) {
         return doc.id;
       }).toList();
@@ -79,8 +79,7 @@ class PostRepositoryImpl implements PostRepository {
   @override
   Future<List<String>> myLikeIds(String uid) async {
     try {
-      final snapshot =
-          await _read(firebaseFirestoreProvider).myLikesRef(uid).get();
+      final snapshot = await _firebaseFirestore.myLikesRef(uid).get();
       final list = snapshot.docs.map((doc) {
         return doc.id;
       }).toList();
@@ -96,8 +95,7 @@ class PostRepositoryImpl implements PostRepository {
     try {
       List<Post> postList = [];
       ids.forEach((id) async {
-        final docs =
-            await _read(firebaseFirestoreProvider).userPostsRef(id).get();
+        final docs = await _firebaseFirestore.userPostsRef(id).get();
         final post = Post.fromDocument(docs);
         postList.add(post);
       });
@@ -111,16 +109,10 @@ class PostRepositoryImpl implements PostRepository {
   @override
   Future<void> deletePost(String uid, String postId) async {
     try {
-      await _read(firebaseFirestoreProvider)
-          .myPostRef(uid)
-          .doc(postId)
-          .delete();
-      await _read(firebaseFirestoreProvider).postsRef().doc(postId).delete();
+      await _firebaseFirestore.myPostRef(uid).doc(postId).delete();
+      await _firebaseFirestore.postsRef().doc(postId).delete();
 
-      await _read(firebaseFirestoreProvider)
-          .myLikesRef(uid)
-          .doc(postId)
-          .delete();
+      await _firebaseFirestore.myLikesRef(uid).doc(postId).delete();
     } on FirebaseAuthException catch (e) {
       throw CustomException(message: e.message);
     }
@@ -134,41 +126,28 @@ class PostRepositoryImpl implements PostRepository {
       if (postIds != []) {
         postIds.forEach((postId) async {
           // postの画像の削除
-          await _read(firebaseStorageProvider)
-              .ref(folderName)
-              .child(postId)
-              .delete();
+          await _firebaseStorage.ref(folderName).child(postId).delete();
           // postIdの削除
-          await _read(firebaseFirestoreProvider)
-              .myPostRef(uid)
-              .doc(postId)
-              .delete();
+          await _firebaseFirestore.myPostRef(uid).doc(postId).delete();
           // postの削除
-          await _read(firebaseFirestoreProvider).userPostsRef(postId).delete();
+          await _firebaseFirestore.userPostsRef(postId).delete();
         });
       }
       if (likeIds != []) {
         likeIds.forEach((likeId) async {
-          final docs = await _read(firebaseFirestoreProvider)
-              .postsRef()
-              .doc(likeId)
-              .get();
+          final docs = await _firebaseFirestore.postsRef().doc(likeId).get();
           final data = docs.data();
           final post = Post.fromJson(data!);
-          await _read(firebaseFirestoreProvider).userPostsRef("${post.id}").set(
-              Post(
-                      id: post.id,
-                      postUserId: "${post.postUserId}",
-                      postImage: post.postImage,
-                      title: post.title,
-                      content: post.content,
-                      likeCount: post.likeCount - 1)
-                  .toJson());
+          await _firebaseFirestore.userPostsRef("${post.id}").set(Post(
+                  id: post.id,
+                  postUserId: "${post.postUserId}",
+                  postImage: post.postImage,
+                  title: post.title,
+                  content: post.content,
+                  likeCount: post.likeCount - 1)
+              .toJson());
           // likeIdの削除
-          await _read(firebaseFirestoreProvider)
-              .myLikesRef(uid)
-              .doc(likeId)
-              .delete();
+          await _firebaseFirestore.myLikesRef(uid).doc(likeId).delete();
         });
       }
     } on FirebaseAuthException catch (e) {
@@ -181,19 +160,17 @@ class PostRepositoryImpl implements PostRepository {
   Future<Post> setLike(Post post) async {
     try {
       // likeした投稿のカウントをを保存
-      await _read(firebaseFirestoreProvider).userPostsRef("${post.id}").set(
-          Post(
-                  id: post.id,
-                  postUserId: "${post.postUserId}",
-                  postImage: post.postImage,
-                  title: post.title,
-                  content: post.content,
-                  likeCount: post.likeCount + 1,
-                  createdAt: post.createdAt)
-              .toJson());
+      await _firebaseFirestore.userPostsRef("${post.id}").set(Post(
+              id: post.id,
+              postUserId: "${post.postUserId}",
+              postImage: post.postImage,
+              title: post.title,
+              content: post.content,
+              likeCount: post.likeCount + 1,
+              createdAt: post.createdAt)
+          .toJson());
 
-      final docs =
-          await _read(firebaseFirestoreProvider).postsRef().doc(post.id).get();
+      final docs = await _firebaseFirestore.postsRef().doc(post.id).get();
       final data = docs.data();
       return Post.fromJson(data!);
     } on FirebaseAuthException catch (e) {
@@ -204,19 +181,17 @@ class PostRepositoryImpl implements PostRepository {
   @override
   Future<Post> deleteLike(Post post) async {
     try {
-      await _read(firebaseFirestoreProvider).userPostsRef("${post.id}").set(
-          Post(
-                  id: post.id,
-                  postUserId: "${post.postUserId}",
-                  postImage: post.postImage,
-                  title: post.title,
-                  content: post.content,
-                  likeCount: post.likeCount - 1,
-                  createdAt: post.createdAt)
-              .toJson());
+      await _firebaseFirestore.userPostsRef("${post.id}").set(Post(
+              id: post.id,
+              postUserId: "${post.postUserId}",
+              postImage: post.postImage,
+              title: post.title,
+              content: post.content,
+              likeCount: post.likeCount - 1,
+              createdAt: post.createdAt)
+          .toJson());
 
-      final docs =
-          await _read(firebaseFirestoreProvider).postsRef().doc(post.id).get();
+      final docs = await _firebaseFirestore.postsRef().doc(post.id).get();
       final data = docs.data();
       return Post.fromJson(data!);
     } on FirebaseAuthException catch (e) {

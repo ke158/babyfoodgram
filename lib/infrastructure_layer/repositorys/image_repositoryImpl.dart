@@ -1,16 +1,16 @@
 import 'dart:io';
 
-import 'package:babyfoodgram/domain_layer/domain_providers.dart';
 import 'package:babyfoodgram/domain_layer/interfaces/repository/image_repository.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../utils/custom_exception.dart';
 
 class ImageRepositoryImpl implements ImageRepository {
-  final Reader _read;
-  const ImageRepositoryImpl(this._read);
+  ImageRepositoryImpl({
+    required FirebaseStorage firebaseStorage,
+  }) : _firebaseStorage = firebaseStorage;
+  final FirebaseStorage _firebaseStorage;
 
   @override
   Future<XFile?> getImageFromGallery() async {
@@ -27,15 +27,10 @@ class ImageRepositoryImpl implements ImageRepository {
   Future<String> uploadImage(String uid, String folderName, File? image) async {
     try {
       //　イメージの登録
-      await _read(firebaseStorageProvider)
-          .ref(folderName)
-          .child(uid)
-          .putFile(image!);
-          
+      await _firebaseStorage.ref(folderName).child(uid).putFile(image!);
       //　URL取得
-      String downloadUrl = await _read(firebaseStorageProvider)
-          .ref("${folderName}${uid}")
-          .getDownloadURL();
+      String downloadUrl =
+          await _firebaseStorage.ref("${folderName}${uid}").getDownloadURL();
       return downloadUrl;
     } on FirebaseException catch (e) {
       throw CustomException(message: e.message);
@@ -46,7 +41,7 @@ class ImageRepositoryImpl implements ImageRepository {
   @override
   Future<void> deleteUploadImage(String uid, String folderName) async {
     try {
-      await _read(firebaseStorageProvider).ref(folderName).child(uid).delete();
+      await _firebaseStorage.ref(folderName).child(uid).delete();
     } on FirebaseException catch (e) {
       throw CustomException(message: e.message);
     }

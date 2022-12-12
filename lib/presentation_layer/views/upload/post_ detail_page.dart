@@ -81,7 +81,7 @@ class PostDetailPage extends HookConsumerWidget {
                               width: 10,
                             ),
                             Container(
-                              width: 100,
+                              width: 90,
                               child: Text(
                                 "${_user.userName}",
                                 style: TextStyle(
@@ -91,7 +91,7 @@ class PostDetailPage extends HookConsumerWidget {
                               ),
                             ),
                             SizedBox(
-                              width: 20,
+                              width: 10,
                             ),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

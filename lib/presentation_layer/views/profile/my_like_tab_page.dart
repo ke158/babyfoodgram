@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../infrastructure_layer/infrastructure_providers.dart';
 import '../../presentation_providers.dart';
+import '../upload/post_ detail_page.dart';
 import 'profile_page.dart';
 
 class MyLikeTabPage extends StatefulHookConsumerWidget {
@@ -38,132 +39,141 @@ class _MyLikeTabPageState extends ConsumerState<MyLikeTabPage>
               final _isFavorite =
                   ref.watch(isFavoriteProvider("${_post.id}")).value;
               if (_user != null && _isFavorite != null) {
-                return Container(
-                  width: double.infinity,
-                  height: 170,
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Row(
-                        children: [
-                          _post.postImage != ""
-                              ? Container(
-                                  width: 80,
-                                  height: 80,
-                                  child: ClipRect(
-                                      child: FittedBox(
-                                    child: Image(
-                                        image:
-                                            NetworkImage("${_post.postImage}")),
-                                    fit: BoxFit.cover,
-                                  )),
-                                )
-                              : Container(
-                                  width: 80,
-                                  height: 80,
-                                ),
-                          Expanded(
-                              child: Container(
-                                  height: 80,
-                                  child:
-                                      Center(child: Text("${_post.title}")))),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Container(
-                        height: 70,
-                        color: Colors.black87,
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                PostDetailPage("${_post.id}", _user)));
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 170,
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 10,
+                        ),
+                        Row(
                           children: [
-                            GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              ProfilePage("${_user.id}")));
-                                },
-                                child: _user.profileImage != null
-                                    ? CircleAvatar(
-                                        radius: 22,
-                                        foregroundImage: NetworkImage(
-                                            "${_user.profileImage}"),
-                                      )
-                                    : Container()),
-                            SizedBox(
-                              width: 10,
-                            ),
-                            Container(
-                              width: 100,
-                              child: Text(
-                                "${_user.userName}",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 20,
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "作成日",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
+                            _post.postImage != ""
+                                ? Container(
+                                    width: 80,
+                                    height: 80,
+                                    child: ClipRect(
+                                        child: FittedBox(
+                                      child: Image(
+                                          image: NetworkImage(
+                                              "${_post.postImage}")),
+                                      fit: BoxFit.cover,
+                                    )),
+                                  )
+                                : Container(
+                                    width: 80,
+                                    height: 80,
                                   ),
-                                ),
-                                Text(
-                                  DateFormat('yyyy/MM/dd/HH:mm')
-                                      .format(_post.createdAt!),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(
-                              width: 20,
-                            ),
-                            Text(
-                              "${_post.likeCount}",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            IconButton(
-                                icon: Icon(Icons.favorite,
-                                    color: _isFavorite
-                                        ? Colors.pink
-                                        : Colors.white),
-                                onPressed: () async {
-                                  if (_isFavorite != true) {
-                                    // likeID作成
-                                    await ref
-                                        .watch(likeRepositoryProvider)
-                                        .setLike("${_currentState!.uid}",
-                                            "${_post.id}");
-                                    await _postController.setLike(_post);
-                                  } else {
-                                    // likeID削除
-                                    await ref
-                                        .watch(likeRepositoryProvider)
-                                        .deleteLike("${_currentState!.uid}",
-                                            "${_post.id}");
-                                    await _postController.deleteLike(_post);
-                                  }
-                                }),
+                            Expanded(
+                                child: Container(
+                                    height: 80,
+                                    child:
+                                        Center(child: Text("${_post.title}")))),
                           ],
                         ),
-                      ),
-                    ],
+                        SizedBox(
+                          height: 10,
+                        ),
+                        Container(
+                          height: 70,
+                          color: Colors.black87,
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                ProfilePage("${_user.id}")));
+                                  },
+                                  child: _user.profileImage != null
+                                      ? CircleAvatar(
+                                          radius: 22,
+                                          foregroundImage: NetworkImage(
+                                              "${_user.profileImage}"),
+                                        )
+                                      : Container()),
+                              SizedBox(
+                                width: 10,
+                              ),
+                              Container(
+                                width: 90,
+                                child: Text(
+                                  "${_user.userName}",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 10,
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "作成日",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Text(
+                                    DateFormat('yyyy/MM/dd/HH:mm')
+                                        .format(_post.createdAt!),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                width: 20,
+                              ),
+                              Text(
+                                "${_post.likeCount}",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              IconButton(
+                                  icon: Icon(Icons.favorite,
+                                      color: _isFavorite
+                                          ? Colors.pink
+                                          : Colors.white),
+                                  onPressed: () async {
+                                    if (_isFavorite != true) {
+                                      // likeID作成
+                                      await ref
+                                          .watch(likeRepositoryProvider)
+                                          .setLike("${_currentState!.uid}",
+                                              "${_post.id}");
+                                      await _postController.setLike(_post);
+                                    } else {
+                                      // likeID削除
+                                      await ref
+                                          .watch(likeRepositoryProvider)
+                                          .deleteLike("${_currentState!.uid}",
+                                              "${_post.id}");
+                                      await _postController.deleteLike(_post);
+                                    }
+                                  }),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               } else {

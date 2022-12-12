@@ -1,3 +1,4 @@
+import 'package:babyfoodgram/infrastructure_layer/infrastructure_providers.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -33,5 +34,6 @@ final imageStateControllerProvider =
     StateNotifierProvider.autoDispose<ImageStateController, ImageState>((ref) {
   print('imageStateControllerProvider init');
   ref.onDispose(() => print('imageStateControllerProvider dispose'));
-  return ImageStateController(ref.read);
+  return ImageStateController(
+      imageRepositoryImpl: ref.read(imageRepositoryProvider));
 });

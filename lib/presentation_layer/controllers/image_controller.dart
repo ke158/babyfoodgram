@@ -1,37 +1,28 @@
 import 'dart:io';
-
-import 'package:babyfoodgram/infrastructure_layer/infrastructure_providers.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../domain_layer/models/state/image_state.dart';
+import '../../infrastructure_layer/repositorys/image_repositoryImpl.dart';
 
-class ImageStateController extends StateNotifier<ImageState> {
-  ImageStateController(this._read) : super(ImageState());
-  final Reader _read;
+class ImageStateController extends StateNotifier<AsyncValue<ImageState>> {
+  ImageStateController({required ImageRepositoryImpl imageRepositoryImpl})
+      : _imageRepositoryImpl = imageRepositoryImpl,
+        super(AsyncValue.loading());
+
+  final ImageRepositoryImpl _imageRepositoryImpl;
 
   Future<File?> setImage() async {
-    final result = await _read(imageRepositoryProvider).getImageFromGallery();
-    if (result != null) {
-      final image = File(result.path);
-      state = state.copyWith(image: image);
-      return image;
-    }
-    return null;
-  }
-
-  Future<File?> updateImage() async {
-    final result = await _read(imageRepositoryProvider).getImageFromGallery();
-    if (result != null) {
-      final image = File(result.path);
-      state = state.copyWith(image: image);
-      return image;
-    }
+    state = await AsyncValue.guard(() async {
+      final result = await (_imageRepositoryImpl.getImageFromGallery());
+      final image = File(result!.path);
+      return ImageState(image: image);
+    });
     return null;
   }
 
   Future<void> clearImage() async {
-    if (state.image != null) {
-      state = await state.copyWith(image: null);
-    }
+    state = await AsyncValue.guard(() async {
+      return ImageState(image: null);
+    });
   }
 }

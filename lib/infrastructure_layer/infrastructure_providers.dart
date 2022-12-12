@@ -1,3 +1,4 @@
+import 'package:babyfoodgram/domain_layer/domain_providers.dart';
 import 'package:babyfoodgram/infrastructure_layer/repositorys/auth_repositoryImpl.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -12,7 +13,7 @@ import 'repositorys/user_repositoryImpl.dart';
 
 // Auth
 final authRepositoryProvider = Provider.autoDispose<AuthRepositoryImpl>(
-    (ref) => AuthRepositoryImpl(ref.read));
+    (ref) => AuthRepositoryImpl(firebaseAuth: ref.read(firebaseAuthProvider)));
 
 final authStreamRepositoryProvider = Provider<AuthStreamRepositoryImpl>(
     (ref) => AuthStreamRepositoryImpl(ref.read));
@@ -68,7 +69,9 @@ final isFavoriteProvider =
 // Post
 final postRepositoryProvider = Provider.autoDispose<PostRepositoryImpl>((ref) {
   print('postRepositoryProvider init');
-  return PostRepositoryImpl(ref.read);
+  return PostRepositoryImpl(
+      firebaseFirestore: ref.read(firebaseFirestoreProvider),
+      firebaseStorage: ref.read(firebaseStorageProvider));
 });
 
 final postStreamRepositoryProvider =
@@ -96,7 +99,8 @@ final imageRepositoryProvider =
     Provider.autoDispose<ImageRepositoryImpl>((ref) {
   print('imageRepositoryProvider init');
   ref.onDispose(() => print('imageRepositoryProvider dispose'));
-  return ImageRepositoryImpl(ref.read);
+  return ImageRepositoryImpl(
+      firebaseStorage: ref.read(firebaseStorageProvider));
 });
 
 // like
